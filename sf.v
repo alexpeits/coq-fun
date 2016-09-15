@@ -241,25 +241,13 @@ Qed.
 Theorem andb_true_elim2 : forall b c : bool,
                             andb b c = true -> c = true.
 Proof.
-  intros [] [].
-  {
-    intros H.
+  intros  [] [] H.
+  - reflexivity.
+  - rewrite <- H.
     reflexivity.
-  }
-  {
-    intros H.
-    rewrite <- H.
+  - reflexivity.
+  - rewrite <- H.
     reflexivity.
-  }
-  {
-    intros H.
-    reflexivity.
-  }
-  {
-    intros H.
-    destruct H.
-    reflexivity.
-  }
 Qed.
 
 Theorem zero_nbeq_plus_1 : forall n : nat,
@@ -310,85 +298,6 @@ Proof.
     reflexivity.
   - reflexivity.
 Qed.
-
-Inductive bin : Type :=
-| Zero : bin
-| Twice : bin -> bin
-| STwice : bin -> bin.
-
-Fixpoint incr_bin (b:bin) : bin :=
-  match b with
-    | Zero => STwice Zero
-    | Twice x => STwice  x
-    | STwice x => Twice (incr_bin x)
-  end.
-
-Fixpoint decr_bin (b:bin) : bin :=
-  match b with
-    | Zero => Zero
-    | STwice Zero => Zero
-    | STwice x => Twice x
-    | Twice x => STwice (decr_bin x)
-  end.
-
-Fixpoint add_bin (b c : bin) : bin :=
-  match b, c with
-    | x, Zero => x
-    | x, STwice y =>  incr_bin (add_bin (add_bin x y) y)
-    | x, Twice y =>  add_bin (add_bin x y) y
-  end.
-
-Fixpoint sub_bin (b c : bin) : bin :=
-  match b, c with
-    | x, Zero => x
-    | x, STwice y =>  decr_bin (sub_bin (sub_bin x y) y)
-    | x, Twice y =>  sub_bin (sub_bin x y) y
-  end.
-
-
-Fixpoint bin_to_nat (b: bin) : nat :=
-  match b with
-    | Zero => 0
-    | Twice x => bin_to_nat x + bin_to_nat x
-    | STwice x => 1 +  (bin_to_nat x + bin_to_nat x)
-  end.
-
-Fixpoint nat_to_bin (n: nat) : bin :=
-  match n with
-    | O => Zero
-    | S x =>  incr_bin (nat_to_bin x)
-  end.
-
-Compute bin_to_nat ((nat_to_bin 100)).
-Compute bin_to_nat (add_bin (nat_to_bin 100) (nat_to_bin 100)).
-Compute bin_to_nat (sub_bin (nat_to_bin 100) (nat_to_bin 100)).
-Compute bin_to_nat (sub_bin (nat_to_bin 200) (nat_to_bin 33)).
-
-Example bin_test_1 : (bin_to_nat(incr_bin Zero) = 1).
-Proof. simpl. reflexivity.  Qed.
-
-Example bin_test_2 : (bin_to_nat(incr_bin (incr_bin Zero)) = 2).
-Proof. simpl. reflexivity.  Qed.
-
-Example bin_test_3 : (bin_to_nat(incr_bin (incr_bin (incr_bin Zero))) = 3).
-Proof. reflexivity.  Qed.
-
-Example bin_test_4 : (bin_to_nat(incr_bin( incr_bin (incr_bin (incr_bin Zero)))) = 4).
-Proof. simpl. reflexivity.  Qed.
-
-
-
-(* Theorem nat_id : forall n : nat, bin_to_nat (nat_to_bin n) = n. *)
-(* Proof. *)
-(*   intros [|x]. *)
-(*   - simpl. reflexivity. *)
-(*   - simpl.  *)
-
-(* Theorem bin_id : forall b : bin, nat_to_bin (bin_to_nat b) = b. *)
-(* Proof. *)
-(*   intros [|x|y]. *)
-(*   - simpl. reflexivity. *)
-(*   - simpl. reflexivity. *)
 
 Theorem plus_n_0 : forall n : nat, n = n + 0.
 Proof.
@@ -473,3 +382,160 @@ Proof.
     reflexivity.
 Qed.
 
+
+Inductive bin : Type :=
+| Zero : bin
+| Twice : bin -> bin
+| STwice : bin -> bin.
+
+Fixpoint incr_bin (b:bin) : bin :=
+  match b with
+    | Zero => STwice Zero
+    | Twice x => STwice  x
+    | STwice x => Twice (incr_bin x)
+  end.
+
+Fixpoint decr_bin (b:bin) : bin :=
+  match b with
+    | Zero => Zero
+    | STwice Zero => Zero
+    | STwice x => Twice x
+    | Twice x => STwice (decr_bin x)
+  end.
+
+Fixpoint add_bin (b c : bin) : bin :=
+  match b, c with
+    | x, Zero => x
+    | x, STwice y =>  incr_bin (add_bin (add_bin x y) y)
+    | x, Twice y =>  add_bin (add_bin x y) y
+  end.
+
+Fixpoint sub_bin (b c : bin) : bin :=
+  match b, c with
+    | x, Zero => x
+    | x, STwice y =>  decr_bin (sub_bin (sub_bin x y) y)
+    | x, Twice y =>  sub_bin (sub_bin x y) y
+  end.
+
+
+Fixpoint bin_to_nat (b: bin) : nat :=
+  match b with
+    | Zero => 0
+    | Twice x => bin_to_nat x + bin_to_nat x
+    | STwice x => 1 +  (bin_to_nat x + bin_to_nat x)
+  end.
+
+Fixpoint nat_to_bin (n: nat) : bin :=
+  match n with
+    | O => Zero
+    | S x =>  incr_bin (nat_to_bin x)
+  end.
+
+Fixpoint normalize(b: bin) :=
+  match b with
+    | Zero => Zero
+    | Twice Zero => Zero
+    | Twice (Twice x) => Twice (STwice (decr_bin (normalize x)))
+    | Twice (STwice x) => Twice (STwice (normalize x))
+    | STwice Zero => STwice Zero
+    | STwice (Twice x) => STwice (Twice (normalize x))
+    | STwice (STwice x) => STwice (Twice (incr_bin (normalize x)))
+  end.
+
+Compute bin_to_nat ((nat_to_bin 100)).
+Compute bin_to_nat (add_bin (nat_to_bin 100) (nat_to_bin 100)).
+Compute bin_to_nat (sub_bin (nat_to_bin 100) (nat_to_bin 100)).
+Compute bin_to_nat (sub_bin (nat_to_bin 200) (nat_to_bin 33)).
+
+Example bin_test_1 : (bin_to_nat(incr_bin Zero) = 1).
+Proof. simpl. reflexivity.  Qed.
+
+Example bin_test_2 : (bin_to_nat(incr_bin (incr_bin Zero)) = 2).
+Proof. simpl. reflexivity.  Qed.
+
+Example bin_test_3 : (bin_to_nat(incr_bin (incr_bin (incr_bin Zero))) = 3).
+Proof. reflexivity.  Qed.
+
+Example bin_test_4 : (bin_to_nat(incr_bin( incr_bin (incr_bin (incr_bin Zero)))) = 4).
+Proof. simpl. reflexivity.  Qed.
+
+
+
+Theorem incr_bin_S : forall n : nat, incr_bin (nat_to_bin n) = nat_to_bin (S n).
+Proof.
+  induction n as [|n' ih].
+  - simpl.
+    reflexivity.
+  - simpl.
+    rewrite -> ih.
+    reflexivity.
+Qed.
+
+Theorem S_incr_bin : forall b : bin, S (bin_to_nat b) = bin_to_nat (incr_bin b).
+Proof.
+  induction b as [|b ih|b ih].
+  - reflexivity.
+  - reflexivity.
+  - simpl.
+    rewrite <- ih.
+    rewrite <- plus_n_Sm.
+    reflexivity.
+Qed.
+
+(* Theorem normalizeIdemp : forall b : bin,  normalize (normalize b) = normalize b. *)
+(* Proof. *)
+(*   induction b. *)
+(*   - reflexivity. *)
+(*   - simpl. rewrite -> IHb. *)
+
+(* Theorem normalizeThru : forall b : bin, b = normalize b -> incr_bin b = normalize (incr_bin b). *)
+(* Proof. *)
+(*   destruct b. *)
+(*   - reflexivity. *)
+(*   - intros H. *)
+(*     rewrite -> H. *)
+(*     simpl. *)
+(* Qed. *)
+
+(* Theorem distributive_nat_to_bin : forall n : nat, nat_to_bin (n + n) = normalize(Twice (nat_to_bin n)). *)
+(* Proof. *)
+(*   induction n as [|n ih]. *)
+(*   - reflexivity. *)
+(*   - rewrite <- incr_bin_S. *)
+(*     rewrite <- plus_n_Sm. *)
+(*     rewrite <- incr_bin_S. *)
+(*     Lemma distributive_S : forall m n : nat, S (m + n) = S m + n. *)
+(*       reflexivity. *)
+(*     Qed. *)
+(*     rewrite <- distributive_S. *)
+(*     rewrite <- incr_bin_S. *)
+(*     Lemma distributive_Twice : forall b : bin, Twice (incr_bin b) = incr_bin (incr_bin (Twice b)). *)
+(*       reflexivity. *)
+(*     Qed. *)
+(*     rewrite -> distributive_Twice. *)
+(*     rewrite -> ih. *)
+
+
+Theorem nat_id : forall n : nat, bin_to_nat (nat_to_bin n) = n.
+Proof.
+  induction n as [|n ih].
+  - reflexivity.
+  - rewrite <- incr_bin_S.
+    rewrite <- S_incr_bin.
+    rewrite -> ih.
+    reflexivity.
+Qed.
+
+(* So you can't prove bin_id, but can you prove that you have an adjunction? *)
+
+(* Theorem bin_id : forall b : bin, b = normalize b -> b = nat_to_bin (bin_to_nat b). *)
+(* Proof. *)
+(*   intros b. *)
+(*   intros H. *)
+(*   rewrite -> H. *)
+(*   induction b. *)
+(*   - reflexivity. *)
+(*   - simpl.  *)
+
+
+    
